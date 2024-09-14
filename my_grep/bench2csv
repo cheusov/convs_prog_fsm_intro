@@ -1,0 +1,51 @@
+#!/usr/bin/awk -f
+
+#
+# This script converts glob_match/glob_match output to CSV
+# Usage: glob_match/glob_match | ./glob_match/bench2cvs
+#
+
+BEGIN {
+	col_count = 1
+}
+
+NF == 0 {
+	++col_count
+	next
+}
+
+/^Avg. line size/ {
+	column[col_count] = $4
+#	print 1, $4
+	next
+}
+
+$NF == "ns" && $2 != "unavailable" {
+	tool = $1
+	sub(/:$/, "", tool)
+#	print 2, tool
+
+	if (! (tool in tools_sets))
+		tools[++tool_count] = tool
+
+	tools_sets[tool] = 1
+	if ($2 != "failed") {
+#		print 3, tool, col_count
+		time[tool, col_count] = $2
+	}
+}
+
+END {
+	for (bn = 1; bn <= col_count; ++bn) {
+		printf ",%s", column[bn]
+	}
+	printf "\n"
+
+	for (tn = 1; tn <= tool_count; ++tn) {
+		printf "%s", tools[tn]
+		for (bn = 1; bn <= col_count; ++bn) {
+			printf ",%s", time[tools[tn], bn]
+		}
+		printf "\n"
+	}
+}

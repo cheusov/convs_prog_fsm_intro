@@ -1,0 +1,45 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+	FS = OFS = ","
+}
+
+NR == 1 {
+	print "\\begin{table}"
+	printf "   \\begin{tabular}{ l |"
+	for (i = 2; i <= NF; ++i) {
+		printf " c | "
+	}
+	printf "}\n"
+}
+
+{
+	for (i = 2; i <= NF; ++i) {
+		if ($i != "")
+			$i = sprintf("%4.2f", $i)
+		else
+			$i = "---"
+	}
+}
+
+{
+	gsub(/,/, " \\& ", $0)
+	gsub(/_/, "\\_", $0)
+
+	if (NR == 1)
+		printf "   \\rowcolor{lightgray}"
+	else
+		printf "   \\cellcolor{lightgray} "
+
+	print $0 " \\\\"
+}
+
+NR == 1 {
+	print "   \\hline"
+}
+
+END {
+	print "   \\end{tabular}"
+	print "   \\caption{This is a caption}"
+	print "\\end{table}"
+}

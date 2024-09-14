@@ -1,0 +1,40 @@
+CXXOPTS ?=	-O3 -g
+COPTS   ?=	-O3 -g
+
+DOCDIR       ?=	${DATADIR}/doc/convs_prog
+
+TRE_CPPFLAGS ?=	-I/usr/include/tre
+TRE_LDADD    ?=	-ltre
+TRE_LDFLAGS  ?=
+
+RX_CPPFLAGS  ?=	-I.
+RX_LDADD     ?=	-lrx
+RX_LDFLAGS   ?=
+
+PCRE2_CPPFLAGS  ?=	-I.
+PCRE2_LDADD     ?=	-lpcre2-posix
+PCRE2_LDFLAGS   ?=
+
+ONIG_CPPFLAGS  ?=	-I.
+ONIG_LDADD     ?=
+ONIG_LDFLAGS   ?=
+
+UXRE_CPPFLAGS  ?=	-I/opt/pkgsrc4unix/include/uxre
+UXRE_LDADD     ?=	-luxre
+UXRE_LDFLAGS   ?=	-L/opt/pkgsrc4unix/lib -Wl,-rpath,/opt/pkgsrc4unix/lib
+
+RXSPENCER_CPPFLAGS  ?=	-I/opt/pkgsrc4unix/include/rxspencer
+RXSPENCER_LDADD     ?=	-lrxspencer
+RXSPENCER_LDFLAGS   ?=	-L/opt/pkgsrc4unix/lib -Wl,-rpath,/opt/pkgsrc4unix/lib
+
+CPPSTLREGEX_CPPFLAGS  ?=
+CPPSTLREGEX_LDADD     ?=
+CPPSTLREGEX_LDFLAGS   ?=
+
+RE2_CPPFLAGS  ?=
+RE2_LDADD     ?=	-lre2
+RE2_LDFLAGS   ?=
+
+PIRE_CPPFLAGS  ?=	-I${HOME}/local/include
+PIRE_LDADD     ?=	-lpire
+PIRE_LDFLAGS   ?=	-L${HOME}/local/lib -Wl,-rpath,${HOME}/local/lib

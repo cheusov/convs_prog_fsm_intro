@@ -1,0 +1,845 @@
+%%%begin-myprojects
+\documentclass[hyperref={colorlinks=true},xcolor=table]{beamer}
+
+\usepackage{fancyvrb,relsize}
+\usepackage{graphicx}
+
+\usetheme{Malmoe}
+%\usetheme{Berlin}
+%\usetheme{Warsaw} % Boadilla 
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{page number in head/foot}[totalframenumber]
+
+%\usetheme{Boadilla}
+%\usetheme{CambridgeUS}
+%\usetheme{Malmoe}
+%\usetheme{Singapore}
+%\usetheme{boxes}
+
+%\usecolortheme{crane}
+%\usecolortheme{dove}
+\usepackage[linesnumbered,ruled]{algorithm2e}
+\usecolortheme{seagull} % very cool with \usetheme{default}
+%\usecolortheme{lily} % very cool with \usetheme{default}
+%\usefonttheme{professionalfonts}
+%\useinnertheme{rectangles}
+
+\mode<presentation>
+\title{Introduction to Finite State Machines. Part I}
+\author{Aleksey Cheusov \\ \texttt{vle@gmx.net} \\   t.me/convs\_prog}
+\date{Minsk/Belarus, Kutaisi/Georgia\\
+  September 2024\\
+}
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newenvironment{Code}[1]%
+              {\Verbatim[label=\bf{#1},frame=single,%
+                  fontsize=\small,%
+                  commandchars=\\\{\}]}%
+              {\endVerbatim}
+
+%\newenvironment{Code}[1]%
+%               {\semiverbatim[]}%
+%               {\endsemiverbatim}
+
+\newenvironment{CodeNoLabel}%
+               {\Verbatim[frame=single,%
+                   fontsize=\small,%
+                   commandchars=\\\{\}]}%
+               {\endVerbatim}
+\newenvironment{CodeNoLabelTiny}%
+               {\Verbatim[frame=single,%
+                   fontsize=\tiny,%
+                   commandchars=\\\{\}]}%
+               {\endVerbatim}
+\newenvironment{CodeNoLabelSmallest}%
+               {\Verbatim[frame=single,%
+                   fontsize=\footnotesize,%
+                   commandchars=\\\{\}]}%
+               {\endVerbatim}
+\newenvironment{CodeLarge}%
+               {\Verbatim[frame=single,%
+                   fontsize=\large,%
+                   commandchars=\\\{\}]}%
+               {\endVerbatim}
+
+%\newcommand{\prompt}[1]{\textcolor{blue}{#1}}
+%\newcommand{\prompt}[1]{\textbf{#1}\textnormal{}}
+\newcommand{\prompt}[1]{{\bf{#1}}}
+%\newcommand{\h}[1]{\textbf{#1}}
+%\newcommand{\h}[1]{\bf{#1}\textnormal{}}
+\newcommand{\h}[1]{{\bf{#1}}}
+\newcommand{\URL}[1]{\textbf{#1}}
+\newcommand{\AutohellFile}[1]{\textcolor{red}{#1}}
+\newcommand{\MKCfile}[1]{\textcolor{green}{#1}}
+\newcommand{\ModuleName}[1]{\textbf{#1}\textnormal{}}
+\newcommand{\ProgName}[1]{\textbf{#1}\textnormal{}}
+\newcommand{\ProjectName}[1]{\textbf{#1}\textnormal{}}
+\newcommand{\PackageName}[1]{\textbf{#1}\textnormal{}}
+\newcommand{\MKC}[1]{\large\textsf{#1}\textnormal{}\normalsize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% \begin{frame}
+%%   \frametitle{qqq}
+%%   \begin{code}{files in the directory}
+%%     bla bla bla
+%%   \end{code}
+%% \end{frame}
+
+%%%end-myprojects
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \titlepage
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Yet another presentation about Finite State Machines?}
+  Goals
+  \begin{itemize}
+  \item Short introduction to Finite State Machines
+  \item Open source educational tool \textbf{my\_grep} for learning
+  \item Real-life benchmarks with a lot of avalable regexps implementations
+  \end{itemize}
+  Useful side-effect ;-)
+  \begin{itemize}
+  \item Newer -- does not mean better
+  \item More popular -- does not mean better
+  \item Actively developped -- does not mean better
+  \item Big community -- does not mean better
+  \item Richer functionality -- does not mean better
+  \item Packaged in every Linux/BSD system -- does not mean better
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Plan}
+  \begin{itemize}
+  \item Formal definition of Finite State Automaton (Non-deterministic
+    Finite Automaton or NFA)
+  \item Examples of Finite State Automata
+  \item Formal definition of Deterministic Finite Automaton (DFA)
+  \item Examples of Deterministic Finite Automata
+    % division by 2
+    % division by 3
+    % accepting openvpn within a string (Knuth–Morris–Pratt and
+    %  Aho-Corasick algorithms)
+    % accepting floating point number
+  \item Formal definition of regular language
+  \item Regular expressions and glob patterns
+    % equivalence of regular language and regular expression, regexp
+    % libraries are often NOT a regular ex[pression in methematical sense
+  \item Algorithm of match with the help of DFA
+  \item my\_grep: grep-like tool for matching using glob pattern
+    \begin{itemize}
+    \item Convertion of glob pattern to finite state automaton
+      % files for testing, input{0,1,2,3,4,5}
+    \item Benchmarks for POSIX regexp implementations (libc, libtre, libpcre2,
+      liboniguruma, libuxre, rxspencer), Google re2, Yandex PIRE, C++
+      std::regex, GNU grep, Perl, Ruby, GNU awk,
+      mawk, nbawk (nawk by Brian Kernighan patched by NetBSD developers)
+    \end{itemize}
+  \item Conslusions
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Finite State Automaton (FSA), also known as
+    Non-deterministic Finite Automaton (NFA)}
+  A finite state automaton is a 5-tuple $<\Sigma,S,Q,F,\delta>$. Sometimes it is called ``acceptor''.
+  \begin{itemize}
+  \item $\Sigma$ is the alphabet, a finite non-empty set of symbols.
+  \item $S$ is a finite non-empty set of states.
+  \item $Q$ is the set of initial states, $Q \subseteq S$.
+  \item $F$ is the set of final states, $F \subseteq S$.
+  \item $\delta$ is the transition relation: $\delta \subseteq S \times \Sigma \times S$
+    (or, alternatively, $\delta: S \times \Sigma \rightarrow 2^S$)
+  \end{itemize}
+  Example: $<\{a,b\},\{s1,s2,s3\},\{s1\},\{s3\},\delta>$ where\\
+  $\delta$ = $\{(s1, a, s3), (s1, a, s2), (s2, b, s1)\}$
+  \begin{figure}
+    \includegraphics[height=0.3\textheight]{fsa_example.eps}
+  \end{figure}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Language of FSA}
+  The language formed by the FSA consists
+  of all distinct strings that can be accepted by FSA, i.e. sequences of symbols 
+  that start in any initial state and ends in a final state. $L(fsa) = \{(a b)^n a | n \ge 0\}$
+  \begin{figure}
+    \includegraphics[keepaspectratio=false]{fsa_example.eps}
+  \end{figure}
+  \textbf{Note:} FSAs are equivalent if their languages are equal.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Example. FSA ``devided by 2''}
+  FSA: $<\{0,1\},\{r0,r1\},\{r0\},\{r0\},\delta>$ where\\
+  $\delta$ = $\{(r0, 0, r0), (r0, 1, r1), (r1, 0, r0), (r1, 1, r1)\}$\\
+  Most significant bits come first.
+  \begin{figure}
+    \includegraphics[keepaspectratio=true]{fsa_divided_by_2.eps}
+  \end{figure}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}
+  \frametitle{Example. FSA ``devided by 3''}
+  FSA: $<\{0,1\},\{r0,r1, r2\},\{r0\},\{r0\},\delta>$ where\\
+  $\delta$ = $\{(r0, 0, r0), (r0, 1, r1), (r1, 1, r0), (r1, 0, r2), (r2, 1, r2), (r2, 0, r1)\}$\\
+  Most significant bits come first.
+  \begin{figure}
+    \includegraphics[keepaspectratio=true]{fsa_divided_by_3.eps}
+  \end{figure}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}
+  \frametitle{Example. FSA for finding occurrence of the substring ``openvpn'' in the string}
+  FSA: $<\{o,p,e,n,v,?\},\{0,1,2,3,4,5,6,7\},\{0\},\{7\},\delta>$
+  \begin{figure}
+    \includegraphics[width=1.0\textwidth, keepaspectratio=true]{fsa_openvpn.eps}
+  \end{figure}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}
+  \frametitle{Example. FSA for matching floating point number}
+  FSA: $<\{+,-,.,[0-9]\},\{s0,s1,s2,s3,s4,s5\},\{s0,s1\},\{s2,s3\},\delta>$
+  \begin{figure}
+    \includegraphics[width=0.9\textwidth, keepaspectratio=true]{fsa_number.eps}
+  \end{figure}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Example. FSA for software design and testing}
+  \textbf{State diagram for C++ class for binary operation:}
+  \begin{block}{}
+      \begin{CodeNoLabelTiny}
+template <typename TArg, typename TRes> class IBinaryOperation \{
+    virtual void set\_a(TArg a) = 0;
+    virtual void set\_b(TArg b) = 0;
+    virtual void process() = 0;
+    virtual TRes get\_result() = 0;
+    virtual void clear() = 0;
+\}
+      \end{CodeNoLabelTiny}
+  \end{block}
+%  \begin{block}
+    \begin{figure}
+      \includegraphics[width=0.71\textwidth, height=0.4\textheight, keepaspectratio=false]{bin_operation.eps}
+    \end{figure}
+%  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}
+  \frametitle{Example. FSA for software design and testing}
+  \begin{table}
+    \begin{tabular}{l | c | c | c }
+      \rowcolor{lightgray}
+      & set\_a & set\_b & process \\
+      \hline
+      \cellcolor{lightgray} initial & A\_is\_ready & B\_is\_ready & Error! \\ 
+      \cellcolor{lightgray} A\_is\_ready & A\_is\_ready & A\_B\_are\_ready & Error! \\
+      \cellcolor{lightgray} B\_is\_ready & A\_B\_are\_ready & B\_is\_ready & Error! \\
+      \cellcolor{lightgray} A\_B\_are\_ready & A\_B\_are\_ready & A\_B\_are\_ready & result\_is\_ready\\
+      \cellcolor{lightgray} result\_is\_ready & A\_B\_are\_ready & A\_B\_are\_ready & Error!\\
+    \end{tabular}
+    \caption{Transition table, part 1}
+  \end{table}
+  \begin{table}
+    \begin{tabular}{l | c | c |}
+      \rowcolor{lightgray}
+       &  get\_result & clear \\
+      \hline
+      \cellcolor{lightgray} initial & Error! & initial \\ 
+      \cellcolor{lightgray} A\_is\_ready & Error! & initial\\
+      \cellcolor{lightgray} B\_is\_ready & Error! & initial\\
+      \cellcolor{lightgray} A\_B\_are\_ready & Error! & initial\\
+      \cellcolor{lightgray} result\_is\_ready & result\_is\_ready & initial \\
+    \end{tabular}
+    \caption{Transition table, part 2}
+  \end{table}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}
+  \frametitle{Deterministic Finite Automaton (DFA)}
+  A deterministic finite state automaton is a 5-tuple $<\Sigma,S,q,F,\delta>$.
+  \begin{itemize}
+  \item $\Sigma$ is the alphabet, a finite non-empty set of symbols.
+  \item $S$ is a finite non-empty set of states.
+  \item $q$ is the initial state, $q \in S$.
+  \item $F$ is the set of final states, $F \subseteq S$.
+  \item $\delta$ is the state-transition function: $\delta: S \times \Sigma \rightarrow S$
+  \end{itemize}
+  \textbf{Theorem:} NFA and DFA are equivalent formalisms. That is,
+  for any given NFA it is possible to construct equivalent DFA and
+  vice versa.
+  \break
+  \textbf{Theorem:} DFA can be exponentially larger than equivalent NFA.
+  \break
+  \textbf{Note:} There is algorithm that converts NFA to DFA.
+  \break
+  \textbf{Note:} There is algorithm that converts NFA to Minimal DFA.
+  \break
+  \textbf{Note:} There are algorithms that convert DFA to Minimal DFA.
+  \break
+  \textbf{Theorem:} For any finite state automaton, there is a single Minimal
+  DFA equivalent to the given one.
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Example. NFA and equivalent DFA}
+  NFA
+  \begin{figure}
+    \includegraphics[width=0.40\textwidth]{fsa_example.eps}
+  \end{figure}
+  Equivalent minimal DFA
+  \begin{figure}
+    \includegraphics[width=0.30\textwidth]{dfa_example.eps}
+  \end{figure}
+  Language: $\{(a b)^n a | n \ge 0\}$
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Example. DFA and equivalent minimal DFA}
+  DFA
+  \begin{figure}
+    \includegraphics[width=0.40\textwidth]{dfa_example1.eps}
+  \end{figure}
+  Equivalent minimal DFA
+  \begin{figure}
+    \includegraphics[width=0.30\textwidth]{mindfa_example1.eps}
+  \end{figure}
+  Language: $\{(a|b)^n | n \ge 1\}$
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}
+  \frametitle{Regular language}
+  The collection of regular languages over an alphabet $\Sigma$ is defined recursively as follows:
+  \begin{itemize}
+  \item The empty language $\emptyset$, and the empty string language $\{\epsilon\}$ are regular languages.
+  \item For each $a \in \Sigma$, the singleton language $\{a\}$ is a regular language.
+  \item If $A$ and $B$ are regular languages, then $A \cup B$ (union), $A \bullet B$ (concatenation), and $A\ast$ (Kleene star) are regular languages.
+  \item No other languages over $\Sigma$ are regular.
+  \end{itemize}
+  Above formalism gives us so called ``\textbf{regular expressions}'', for
+  example,\\
+  \center{\texttt{\^{}Sep 23.*(openvpn|sshd)}}
+%  ``\^{}Sep 23.* (openvpn \vert sshd)''.
+  \break\break
+  \textbf{Theorem:} Regular Language and Finite State Automaton are equivalent
+  formalisms. That is, for each regular language the equivalent FSA
+  exists and vise versa.
+  \break
+  \textbf{Note:} Language that supports
+  back-references is not regular and therefore matcher cannot be
+  \textbf{efficiently} implemented
+  with the help of FSA. %That's why loosers work so badly.
+%  \textbf{Theorem:} Regular languages are closed under concatenation, union, kleene star,
+%  intersection and complementation.
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Glob pattern}
+  Glob pattern is a way we specify the regular language:
+  \begin{itemize}
+  \item The wildcard * stands for ``any string of any length including empty''
+  \item The wildcard ? stands for ``any character''
+  \item All other characters mean itself
+  \end{itemize}
+  \break
+  I implemented my own tool \textbf{my\_grep} for matching
+  using \textbf{glob} patterns.
+  \break
+  \break
+  \textit{usage: my\_grep PATTERN FILE}
+  \break
+  \break
+  \textbf{my\_grep} searches for PATTERN in FILE,
+  and prints each line that matches a PATTERN. PATTERN is a glob
+  pattern as described above. If FILE is -, then stdin is used as input.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\tiny
+\begin{frame}
+  \frametitle{Algorithm of building FSA from glob pattern}
+  \begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Output}{output}
+    \Input{GlobPattern = $[c_1, c_2 \dots c_n]$}
+    \Output{FSA = $<\Sigma,S,Q,F,\delta>$}
+    \SetAlgoLined
+%    \SetAlgoNoEnd
+    $\Sigma \leftarrow \{?\}$\;
+    $\delta \leftarrow \emptyset$\;
+    \For{$i \in [1,n]$}{
+      \uIf{$c_i \ne *$   and   $c_i \ne ?$}{
+        $\Sigma \leftarrow \Sigma \cap {c_i}$
+      }
+    }
+    $state \leftarrow 0$\;
+    \For{$i \in [1,n]$}{
+      \uIf{$c_i$ = *}{
+        \For{$s \in \Sigma$}{$\delta \leftarrow \delta \cap (state, s, state)$ }
+      }\uElseIf{$c_i$ = ?}{
+        \For{$s \in \Sigma$}{
+          $\delta \leftarrow \delta \cap (state, s, state + 1)$\;
+        }
+        $state \leftarrow state + 1$\;
+      }\uElse{
+        $\delta \leftarrow \delta \cap (state, c_i, state + 1)$\;
+        $state \leftarrow state + 1$\;
+      }
+    }
+    \textbf{return} $<\Sigma, \{ x \in \mathbb{Z} | 0 \leq x \leq state \},
+    \{0\}, \{state\}, \delta>$
+    \caption{Convert glob pattern to FSA. \textbf{Complexity: $O(n)$}}
+  \end{algorithm}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{ Example. FSA for glob pattern Sep 2?*sshd }
+  Glob pattern:
+  Sep 2?*sshd
+  \break\break
+  FSA:
+  \begin{figure}
+    \includegraphics[height=0.50\textheight]{fsa_sep_23_star_openvpn.eps}
+  \end{figure}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+  \frametitle{Algorithm of match with the help of DFA}
+  \begin{algorithm}[H]
+    \DontPrintSemicolon
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Output}{output}
+    \Input{DFA = $<\Sigma,S,q,F,\delta>, Text=[t_1, t_2 \dots t_n], t_i \in \Sigma$}
+    \Output{$true$ \textbf{or} $false$}
+    \SetAlgoLined
+%    \SetAlgoNoEnd
+    $state \leftarrow q$\;
+    \For{$i \in [1,n]$}{
+      \uIf{$\delta$ is defined on $(state, t_i)$}{
+        $state \leftarrow \delta(state, t_i)$\;
+      }\Else{
+        \textbf{return} false\;
+      }
+    }
+    \textbf{return} $(state \in F)$\;
+    \caption{Match with a help of DFA. \textbf{Complexity: $O(n)$}}
+  \end{algorithm}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. C++ class fast\_dfa}
+  If $\delta$ is not defined on $(state, iw)$,\break
+  m\_arcs[state * m\_iw\_count + iw] == -1
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+class fast_dfa \{
+private:
+   unsigned m_iw_count;
+   unsigned *m_arcs = nullptr;
+   bool *m_finite_states = nullptr;
+
+public:
+   inline
+   int get_arc(int state, unsigned iw) const \{
+      return m_arcs[state * m_iw_count + iw];
+   \}
+
+   inline
+   bool is_finite_state(int state) const \{
+      return m_finite_states[state];
+   \}
+
+   ...
+\};
+    \end{CodeNoLabelTiny}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. C++ class dfa\_matcher}
+  \begin{block}{}
+    \begin{CodeNoLabel}
+class dfa_matcher \{
+private:
+   // DFA
+   fast_dfa m_fast_dfa;
+
+   // map symbols used in regexp to 1, 2 etc.
+   // and all others to 0
+   unsigned *m_iw_map = nullptr;
+   unsigned m_iw_map_size = 0;
+
+public:
+   // return non-zero value if match succeeded
+   // and 0 otherwise
+   int match(const char *buffer, size_t buffer_size);
+   ...
+\}
+    \end{CodeNoLabel}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. Method dfa\_matcher::match}
+  \begin{block}{}
+    \begin{CodeNoLabel}
+   int glob_match::match(
+      const char *buffer, size_t buffer_size)
+   \{
+      unsigned iw = 0;
+      int state = 0; // 0 is a initial state of DFA
+
+      for (size_t pos = 0; pos < buffer_size; ++pos) \{
+         iw = (unsigned) (unsigned char) buffer[pos];
+         iw = m_iw_map[iw];
+         state = m_fast_dfa.get_arc(state, iw);
+         if (state < 0)
+            return 0;
+      \}
+
+      return m_fast_dfa.is_finite_state(state);
+   \}
+    \end{CodeNoLabel}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. ``Completely finite'' states}
+  Glob pattern: \textbf{ab*}
+  \break
+  $\Sigma = \{a,b,?\}$
+  \break
+  \begin{figure}
+    \includegraphics[height=0.35\textheight]{dfa_abstar.eps}
+  \end{figure}
+  As soon as we reach state \textbf{s3} we can stop scanning and return
+  ``matched''. Thus, we reduce the number of input symbols to scan.
+  Let's call states like \textbf{s3} ``completely finite''.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. ``Completely finite'' states}
+  In order to optimize ``completely finite'' states, let's make
+  \textbf{m\_fast\_dfa.get\_arc(state, iw)} equal to \textbf{-2}
+  when state is ``completely finite'' and \textbf{-1} when $\delta$ is not
+  defined on $(state, iw)$.
+
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+   int glob_match::match(const char *buffer, size_t buffer_size)
+   \{
+      unsigned iw = 0;
+      int state = 0; // 0 is a initial state of DFA
+
+      for (size_t pos = 0; pos < buffer_size; ++pos) \{
+         iw = (unsigned) (unsigned char) buffer[pos];
+         iw = m_iw_map[iw];
+         state = m_fast_dfa.get_arc(state, iw);
+         if (state < 0)
+            // unoptimized version: return 0
+            return state + 1; // -2 -> -1(matched);   -1 -> 0(not matched)
+      \}
+
+      return m_fast_dfa.is_finite_state(state);
+   \}
+    \end{CodeNoLabelTiny}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. Optimization of finite states}
+  We can renumber states in a way that each finite state is greater
+  than non-finite one. In this case, we can remove m\_finite\_states array.
+
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+   class fast_dfa \{
+   private:
+      ...
+      unsigned *m_arcs = nullptr;
+      unsigned m_initial_state; // new member
+      unsigned m_first_finite_state; // new member
+      // bool *m_finite_states = nullptr; // we don't need this array any longer
+   public:
+      inline bool is_finite_state(int state) const noexcept \{
+         return state >= m_first_finite_state; // operation >= instead of accessing memory!
+      \}
+      inline unsigned get_initial_state() const noexcept \{
+         return m_initial_state;
+      \}
+   \}
+    \end{CodeNoLabelTiny}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Utility my\_grep. Optimization of finite states}
+
+  Optimized version:
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+   int glob_match::match(const char *buffer, size_t buffer_size)
+   \{
+      unsigned iw = 0;
+      // unoptimized version: int state = 0;
+      int state = m_fast_dfa.get_initial_state();
+
+      for (size_t pos = 0; pos < buffer_size; ++pos) \{
+         iw = (unsigned) (unsigned char) buffer[pos];
+         iw = m_iw_map[iw];
+         state = m_fast_dfa.get_arc(state, iw);
+         if (state < 0)
+            return state + 1;
+      \}
+
+      return m_fast_dfa.is_finite_state(state);
+   \}
+    \end{CodeNoLabelTiny}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Benchmark. List of libraries and utilities we test}
+  Hardware: AMD Ryzen 7 3700X.\break\break
+  Tested libraries and tools:
+  \footnotesize
+  \begin{itemize}
+  \item Based on POSIX regcomp/regexec API
+    \begin{itemize}
+    \item GNU libc 2.32
+    \item NetBSD libc 10.99.10
+    \item librxspencer 3.8.4 by Henry Spencer
+    \item libtre 0.8.0 by Ville Laurikari
+    \item libpcre2 10.42
+    \item liboniguruma 6.9.9 by K.Kosako
+    \item libuxre 070715 (heirloom, opensourced by Caldera in 2001)
+    \end{itemize}
+  \item Google re2 20220601
+  \item Yandex PIRE 0.0.6 by Dmitry Prokoptsev, Alexander Gololobov et al
+  \item GNU grep 3.6.0.18.70517
+  \item GNU awk 5.1.0 by Aaron Robins
+  \item mawk 1.3.4.20200120 by Mike Brennan and Thomas E. Dickey
+  \item NetBSD awk (nbase, nawk by Brian Kernighan) 9.3
+  \item perl 5.34.0
+  \item ruby 3.1.4p223
+  \end{itemize}
+  \normalsize
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Benchmark. Important notes}
+  \begin{itemize}
+  \item This is \textbf{not} a REAL benchmark
+    \begin{itemize}
+    \item The only tested mode is \textbf{matched/unmatched}. No substring
+      search!
+    \item Input text files are artificial (based on system-wide
+      \textbf{/usr/share/dict/words})
+    \item There is only \textbf{one} tested regular expression, and
+      it's trivial (glob: \textbf{*a*b*c*d*}, regexp: \textbf{a.*b.*c.*d}).
+    \end{itemize}
+  \item My only goal is to demonstrate the importance of algorithm
+    \textbf{complexity} and nothing else.
+  \item All benchmark tools work like POSIX grep utility. They take
+    pattern and file as command line arguments and output matched
+    lines to stdout.
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Benchmark. POSIX regcomp/regexec tools}
+  Regexp compilation
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+      const char *pattern;
+      ...
+      static regex\_t regex;
+      int ret = regcomp(&regex, pattern, REG\_EXTENDED | REG\_NOSUB);
+      ...
+    \end{CodeNoLabelTiny}
+  \end{block}
+  \break\break
+  String match
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+      const char *line;
+      ...
+      int ret = regexec(&regex, line, 0, NULL, 0);
+      ...
+    \end{CodeNoLabelTiny}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{Benchmark. AWK, Perl and Ryby}
+  grep and GNU grep
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+      grep 'pattern'
+    \end{CodeNoLabelTiny}
+  \end{block}
+  gawk, mawk and nbawk
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+      awk '/pattern/'
+    \end{CodeNoLabelTiny}
+  \end{block}
+  \break\break
+  Perl
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+      perl -ne 'print if /pattern/'
+    \end{CodeNoLabelTiny}
+  \end{block}
+  Ruby
+  \begin{block}{}
+    \begin{CodeNoLabelTiny}
+      ruby -ne 'puts $_ if /pattern/'
+    \end{CodeNoLabelTiny}
+  \end{block}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\tiny
+\begin{frame}
+  \frametitle{Benchmark. Results} Cells contain time in nanoseconds
+  required for processing one symbol. Time limit is 1000 ns per
+  symbol. Columns correspond to different average length of the
+  scanned lines. Gray raw contains an average text length to match.
+\begin{table}
+   \begin{tabular}{ l | c |  c |  c |  c |  c |  c |  c |  c |  c | }
+   \rowcolor{lightgray} & 8.95 & 17.90 & 35.80 & 71.60 & 143.15 & 286.12 & 572.25 & 1145.43 & 2290.71 \\
+   \hline
+   \cellcolor{lightgray} my\_grep & 3.61 & 2.85 & 2.51 & 2.29 & 2.22 & 2.20 & 2.15 & 2.16 & 2.18 \\
+   \cellcolor{lightgray} GNU libc & 11.11 & 8.74 & 9.03 & 12.28 & 19.92 & 37.11 & 71.62 & 140.94 & 277.00 \\
+   \cellcolor{lightgray} NetBSD libc & 78.51 & 71.96 & 70.09 & 69.12 & 67.78 & 67.73 & 67.66 & 67.60 & 67.37 \\
+   \cellcolor{lightgray} libtre & 17.50 & 15.14 & 14.58 & 13.93 & 13.54 & 13.32 & 13.22 & 13.23 & 13.01 \\
+   \cellcolor{lightgray} libpcre2 & 7.23 & 6.04 & 7.09 & 11.78 & 26.69 & 71.05 & 219.58 & 746.37 & --- \\
+   \cellcolor{lightgray} liboniguruma & 14.99 & 11.65 & 12.96 & 21.95 & 63.79 & 297.57 & --- & --- & --- \\
+   \cellcolor{lightgray} libuxre & 4.06 & 3.12 & 2.63 & 2.45 & 2.33 & 2.27 & 2.20 & 2.20 & 2.15 \\
+   \cellcolor{lightgray} librxspencer & 37.05 & 33.37 & 32.10 & 30.19 & 29.26 & 30.40 & 29.25 & 30.45 & 29.35 \\
+   \cellcolor{lightgray} std::regex & 29.89 & 35.66 & 61.66 & 146.04 & 515.53 & --- & --- & --- & --- \\
+   \cellcolor{lightgray} re2 & 10.72 & 6.07 & 3.64 & 2.26 & 1.59 & 1.20 & 1.00 & 0.90 & 0.84 \\
+   \cellcolor{lightgray} PIRE & 4.21 & 2.48 & 1.41 & 0.77 & 0.41 & 0.27 & 0.18 & 0.13 & 0.11 \\
+   \cellcolor{lightgray} GNU grep & 2.53 & 2.07 & 1.88 & 1.71 & 1.62 & 1.52 & 1.47 & 1.47 & 1.41 \\
+   \cellcolor{lightgray} Perl & 12.89 & 8.70 & 7.60 & 12.97 & 44.87 & 232.52 & --- & --- & --- \\
+   \cellcolor{lightgray} Ruby & 40.33 & 26.08 & 21.24 & 25.28 & 62.33 & 276.20 & --- & --- & --- \\
+   \cellcolor{lightgray} GNU awk & 11.50 & 7.34 & 4.86 & 3.42 & 2.62 & 2.19 & 2.07 & 1.89 & 1.82 \\
+   \cellcolor{lightgray} mawk & 5.14 & 3.36 & 2.82 & 3.04 & 5.39 & 14.93 & 50.88 & 196.76 & 837.55 \\
+   \cellcolor{lightgray} nbawk & 5.23 & 3.36 & 2.79 & 3.04 & 5.44 & 14.82 & 50.69 & 192.14 & 839.48 \\
+   \end{tabular}
+   \caption{Performance table. The lower numbers are -- the better}
+\end{table}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\footnotesize
+\begin{frame}[fragile]
+  \frametitle{Conclusion}
+  \begin{itemize}
+  \item The following libraries and tools are clean loosers: gcc
+    std::regex (C++), libpcre2,
+    liboniguruma, Perl and Ruby. So, on
+    large texts DO NOT USE THEM!
+  \item Something bad happens with nbawk, mawk. They use DFA internally, but
+    probably work in badly implemented ``substring search'' mode.
+    We need more investigation. GNU libc also needs further analysis.
+  \item Something strange happens with NetBSD grep. It also requires
+    more investigation.
+  \item Yandex PIRE, Google re2, libuxre, libtre, my\_grep, GNU
+    grep and GNU
+    AWK demonstrate linear complexity of algorithm and therefore work
+    very well.
+  \item At least on this particular workload Yandex PIRE and Google re2
+    demonstrates the best performance.
+  \item Performance of my\_grep and libuxre are almost the same. This probably
+    means that algorithms are the same. The same concerns mawk and
+    nbawk.
+  \item librxspencer and NetBSD libc --- no comments yet.
+  \end{itemize}
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\smaller
+\begin{frame}[fragile]
+  \frametitle{Analysis}
+  \break
+  \textbf{Note:} From re2 library:
+  \begin{itemize}
+  \item \textbackslash{}1 --- backreference NOT SUPPORTED
+  \item \textbackslash{}g1 --- backreference NOT SUPPORTED
+  \item \textbackslash{}g{1} --- backreference NOT SUPPORTED
+  \item \textbackslash{}g{+1} --- backreference NOT SUPPORTED
+  \item \textbackslash{}g{-1} --- backreference NOT SUPPORTED
+  \item \textbackslash{}g{name}	--- named backreference NOT SUPPORTED
+  \item \textbackslash{}k$<${}name$>$ --- named backreference NOT SUPPORTED
+  \item \textbackslash{}named backreference NOT SUPPORTED
+  \end{itemize}
+  \break
+  \textbf{My personal recomendation:} If you see that regular
+  expression library supports backreferences, think twice
+  before using it for working with large texts.
+\end{frame}
+\normalsize
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+  \frametitle{}
+  \Huge{to be continued...}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}

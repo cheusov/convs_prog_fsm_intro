@@ -1,0 +1,99 @@
+#!/bin/sh
+
+tmp_input='/tmp/qm.in'
+tmp_result='/tmp/qm.res'
+
+ex=0
+
+cmp () {
+    # $1 -- glob
+    # $2 -- input
+    # $3 -- expected
+    glob="'"`echo "$1" | sed "s/ /' '/g"`"'"
+    #echo glob="$glob"
+    printf "$2" > "$tmp_input"
+    eval my_grep/my_grep $glob "$tmp_input" > "$tmp_result"
+    result=`cat $tmp_result`
+    printf '=======================\n'
+    expected=`printf "$3"`
+    if test "$expected" = "$result"; then
+	printf 'OK: %s\n' "$1"
+    else
+	printf 'FAILED: %s\n   === input:\n%s\n   === expected:\n%s\n   === actual:\n%s\n' "$1" "$2" "$3" "$result"
+	ex=1
+    fi
+}
+
+#
+cmp ab 'ab'          ab
+cmp ab 'ab\n'        ab
+
+cmp ab 'ab\nab'      'ab\nab'
+cmp ab 'ab\nab\n'    'ab\nab'
+
+cmp ab 'abc\nab'      'ab'
+cmp ab 'abc\nab\n'    'ab'
+
+#
+cmp 'ab*' 'ab'          ab
+cmp 'ab*' 'ab\nab'      'ab\nab'
+cmp 'ab*' 'abc\nab'     'abc\nab'
+
+#
+cmp '*ab' 'ab'          ab
+cmp '*ab' 'ab\nab'      'ab\nab'
+cmp '*ab' 'abc\nab'      'ab'
+
+#
+cmp '*ab*' 'ab'          ab
+cmp '*ab*' 'ab\nab'      'ab\nab'
+cmp '*ab*' 'abc\nab'     'abc\nab'
+
+#
+cmp '*'   'a\nab\nabc'        'a\nab\nabc'
+cmp '??'   'a\nab\nabc'        ab
+cmp 'a??a' 'a\nab\nabc\nabca'  abca
+
+# |
+cmp '-Wu *b* *i*' 'abc\ndef\nghi'     'abc\nghi'
+cmp '-Wu *apple* *orange*' 'apples\nand\noranges\nare\nfruits'     'apples\noranges'
+cmp '-Wu a* *a' 'b'     ''
+
+cmp '*b* *i*' 'abc\ndef\nghi'     'abc\nghi'
+cmp '*apple* *orange*' 'apples\nand\noranges\nare\nfruits'     'apples\noranges'
+cmp 'a* *a' 'b'     ''
+
+# &
+cmp '-Wi *a* *b*'     'aaa'             ''
+cmp '-Wi *a* *b*'     'bbb'             ''
+cmp '-Wi *a* *b*'     'xyz'             ''
+cmp '-Wi *a* *b*'     'wamble'          'wamble'
+cmp '-Wi *a* *b*'     'zebra'           'zebra'
+cmp '-Wi *ab* *ba*'   'abba'            'abba'
+cmp '-Wi *ab* *ba*'   'aba'             'aba'
+cmp '-Wi *ab* *ba*'   'absorbability'   'absorbability'
+cmp '-Wi *ab* *ba*'   'xyzab123'        ''
+cmp '-Wi *ab* *ba*'   'xyzba123'        ''
+
+# -
+cmp '-Ws *a* *b*'     'aaa'             'aaa'
+cmp '-Ws *a* *b*'     'bbb'             ''
+cmp '-Ws *a* *b*'     'xyz'             ''
+cmp '-Ws *a* *b*'     'wamble'          ''
+cmp '-Ws *a* *b*'     'zebra'           ''
+cmp '-Ws *ab* *ba*'   'abba'            ''
+cmp '-Ws *ab* *ba*'   'aba'             ''
+cmp '-Ws *ab* *ba*'   'absorbability'   ''
+cmp '-Ws *ab* *ba*'   'xyzab123'        'xyzab123'
+cmp '-Ws *ab* *ba*'   'xyzba123'        ''
+
+#
+fstab='LABEL=altlinux-root / ext4 relatime 1 1
+UUID=08BB-5816 /boot/efi vfat umask=0,quiet,showexec,iocharset=utf8,codepage=866 1 2'
+
+cmp '*5*6*' "$fstab"  'UUID=08BB-5816 /boot/efi vfat umask=0,quiet,showexec,iocharset=utf8,codepage=866 1 2'
+cmp 'U**2' "$fstab"  'UUID=08BB-5816 /boot/efi vfat umask=0,quiet,showexec,iocharset=utf8,codepage=866 1 2'
+cmp 'L*****1' "$fstab"  'LABEL=altlinux-root / ext4 relatime 1 1'
+
+#
+exit $ex

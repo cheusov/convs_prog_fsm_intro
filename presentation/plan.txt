@@ -1,0 +1,100 @@
+Introduction to Finite State Machines:
+  * представиться, кратко о себе
+  * долго созревал до своего канала и вот он
+
+Yet another presentation about Finite State Machine?
+  * Цель презентации -- донести до людей некоторые вещи
+  * Для того, чтобы их донести, необходимы знания о КА
+
+Plan
+  * описать план на лекцию
+
+Finite State Automaton
+  *
+
+Language of FSA
+  *
+
+Example. FSA “devided by 2”
+  *
+
+Example. FSA “devided by 3”
+  *
+
+Example. FSA for ﬁnding occurrence of openvpn
+  * Важно отметить недетерминированность
+
+Example. FSA for matching floating point number
+  * важно отметить, что здесь два начальных состояния
+  
+Example. FSA for software design and testing
+  * Наверное, юольшинство программистов воспринимают КА именно так
+
+Deterministic Finite Automaton (DFA)
+  *
+
+Example. NFA and equivalent DFA
+  *
+
+Example. DFA and equivalent minimal DFA
+  *
+
+Regular language
+  *
+
+Algorithm of match with the help of DFA
+  *
+
+Glob pattern
+  * Показать как использовать glob_match
+  * Я не паршу регулярное выражение не потому, что это невозможно, а
+    потому что мне лень.
+
+Algorithm of building FSA from glob pattern
+  * 
+
+Example. FSA for glob pattern Sep 23?*sshd
+  *
+
+Utility glob match. C++ class fast dfa
+  *
+
+Utility glob match. C++ class dfa matcher
+  *
+
+Utility glob match. Method dfa matcher::match
+  *
+
+Utility glob match. “Completely ﬁnite” states
+  *
+
+Utility glob match. Optimization of ﬁnite states
+  *
+
+Benchmark. List of libraries and utilities we test
+  *
+
+Benchmark. List of libraries and utilities we test
+  *
+
+Benchmark. Important notes
+  *
+
+Benchmark. POSIX regcomp/regexec tools
+  * REG_NOSUB
+  * REG_EXTENDED
+
+Benchmark. AWK, Perl, Ruby
+  * Если вам нужны другие языки программирования, исходники на github-е
+
+Benchmark. Results
+  * Loosers: libpcre2, oniguruma, gcc's std::regex, Perl and Ruby
+  * mawk/nbawk: x2 size -> 1/4 performance
+  * GNU libc: 2x size -> 1/2 performance
+  * glob_match: linear complexity
+  * glob_match and libuxre: almost the same
+  * winners: pire, re2, GNU grep, GNU AWK, glob_match, libuxre, libtre
+
+Conclusion
+  *
+

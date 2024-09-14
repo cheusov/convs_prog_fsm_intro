@@ -1,0 +1,23 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="2,5"
+
+    node [shape = doublecircle]; s2;
+    node [shape = doublecircle]; s3;
+    node [shape = point ]; q1
+    node [shape = point ]; q2
+
+    node [shape = circle];
+    q1 -> s0;
+    q2 -> s1;
+    s0  -> s1 [ label = "+" ];
+    s0  -> s1 [ label = "-" ];
+    s1  -> s2 [ label = "[0-9]" ];
+    s2  -> s2 [ label = "[0-9]" ];
+    s1  -> s4 [ label = "." ];
+    s4  -> s3 [ label = "[0-9]" ];
+    s3  -> s3 [ label = "[0-9]" ];
+    s1  -> s5 [ label = "[0-9]" ];
+    s5  -> s4 [ label = "." ];
+    s5  -> s5 [ label = "[0-9]" ];
+}

@@ -1,0 +1,27 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="2,5"
+
+    node [shape = doubleoctagon]; result_is_ready;
+    node [shape = point ]; qi
+
+    node [shape = octagon];
+    qi -> initial;
+    initial -> A_is_ready [ label = "set_a(a)" ];
+    initial -> B_is_ready [ label = "set_b(b)" ];
+    A_is_ready -> A_is_ready [ label = "set_a(a)" ];
+    B_is_ready -> B_is_ready [ label = "set_b(b)" ];
+    A_is_ready -> A_B_are_ready [ label = "set_b(b)" ];
+    B_is_ready -> A_B_are_ready [ label = "set_a(a)" ];
+    A_B_are_ready -> A_B_are_ready [ label = "set_a()" ];
+    A_B_are_ready -> A_B_are_ready [ label = "set_b()" ];
+    A_B_are_ready -> result_is_ready [ label = "process()" ];
+    result_is_ready -> result_is_ready [ label = "get_result()" ];
+    result_is_ready -> initial [ label = "clear()" ];
+    A_B_are_ready -> initial [ label = "clear()" ];
+    B_is_ready -> initial [ label = "clear()" ];
+    A_is_ready -> initial [ label = "clear()" ];
+    initial -> initial [ label = "clear()" ];
+    result_is_ready -> A_B_are_ready [ label = "set_a(a)" ];
+    result_is_ready -> A_B_are_ready [ label = "set_b(b)" ];
+}

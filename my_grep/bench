@@ -1,0 +1,138 @@
+#!/bin/sh
+
+# user-settable variables
+: ${TIMELIMIT:=1000} # nanoseconds per character
+: ${BENCH_STEP_COUNT:=14}
+: ${BENCH_STEPS:=0 $(seq $BENCH_STEP_COUNT)}
+: ${DICTS_COUNT:=1000} # how many times add /usr/share/dict/words to the test file
+: ${BENCH_TOOLS:=my_grep libc_grep heirloom_egrep tre_grep pcre2_grep onig_grep uxre_grep rxspencer_grep cppstl_grep re2_grep pire_grep grep ggrep perl_grep ruby_grep gawk mawk nbawk}
+: ${TEST_FILE:=/usr/share/dict/words}
+
+#
+set -e
+
+export BENCH_TOOLS
+
+test -r "$TEST_FILE"
+
+tmpdir=`mktemp -d bench.XXXXXX`
+
+if ! test -f "input$BENCH_STEP_COUNT"; then
+    for i in `seq $DICTS_COUNT`; do
+	cat "$TEST_FILE"
+    done > input0
+
+    last=input0
+    for i in `seq $BENCH_STEP_COUNT`; do
+	new="input$i"
+	printf "generating $new..." 1>&2
+	lc=`awk 'END {print NR}' "$last"`
+	awk -v lc="$lc" '{print $0 $0} NR > lc/2 {exit}' "$last" > "$new"
+	printf "\n" 1>&2
+	last="$new"
+    done
+fi
+
+run(){
+    # $1 -- name
+    # $2 -- executable
+    # $3 -- regexp
+    # $4 -- filename
+    if ! echo "$BENCH_TOOLS" | grep -qE '( |^)'"$1"'( |$)'; then
+	return
+    fi
+
+    printf '%s: ' "$1"
+    set +e
+    /usr/bin/time -p $2 "$3" "$4" 2>&1 > "$tmpdir"/"$1.res" 2>"$tmpdir/$1".stderr
+    status=$?
+    set -e
+    case $status in
+	0)
+	    if ! test -f "$tmpdir"/my_grep.res; then
+		# if my_grep is not in BENCH_TOOLS
+		cp "$tmpdir/$1.res" "$tmpdir"/my_grep.res
+	    fi
+	    cmp "$tmpdir"/my_grep.res "$tmpdir/$1".res
+	    rm "$tmpdir"/my_grep.res
+
+	    awk -v fs="$FILE_SIZE" '
+	    /user/ {
+		printf "%s ns\n", $2 * 1000000000 / fs
+	    }' "$tmpdir/$1".stderr
+	    ;;
+	127)
+	    printf '%s\n' 'unavailable'
+	    ;;
+	*)
+	    printf "failed $status\n"
+	    ;;
+    esac
+}
+
+match()(
+    # $1 -- glob pattern
+    # $2 -- regexp pattern
+    # $3 -- filename
+
+    echo "$3: $1 vs. $2"
+    export FILE_SIZE=$(wc -c "$3" | awk '{print $1}')
+    export LINE_COUNT=$(wc -l "$3" | awk '{print $1}')
+    limit=$(expr $FILE_SIZE '*' $TIMELIMIT / 1000000000)
+    ulimit -t "$limit"
+    awk -v tl="$TIMELIMIT" 'BEGIN { printf "Time limit: %s ns per symbol\n", tl }'
+    awk -v fs="$FILE_SIZE" -v lc="$LINE_COUNT" '
+	BEGIN { printf "Avg. line size: %s symbols\n", (fs - lc) / lc }'
+
+    # read the test file, so it will be kept in fs cache
+    awk '{ cnt += 1 } END {print cnt}' > /dev/null
+
+    run 'my_grep' my_grep/my_grep "$1" "$3"
+
+    run 'libc_grep'  libc_grep/libc_grep   "$2" "$3"
+    run 'tre_grep'   tre_grep/tre_grep     "$2" "$3"
+    #run 'rx_grep'    rx_grep/rx_grep       "$2" "$3"
+    run 'pcre2_grep' pcre2_grep/pcre2_grep "$2" "$3"
+    run 'onig_grep'  onig_grep/onig_grep   "$2" "$3"
+    run 'uxre_grep'  uxre_grep/uxre_grep   "$2" "$3"
+    run 'rxspencer_grep'    rxspencer_grep/rxspencer_grep  "$2" "$3"
+
+    run 'cppstl_grep'   cppstl_grep/cppstl_grep     "$2" "$3"
+    run 're2_grep'      re2_grep/re2_grep           "$2" "$3"
+    run 'pire_grep'     pire_grep/pire_grep         "$2" "$3"
+
+    run 'grep'          'grep -E'                   "$2" "$3"
+    run 'ggrep'         'ggrep -E'                  "$2" "$3"
+    run 'heirloom_egrep' heirloom_egrep             "$2" "$3"
+    run 'perl_grep'     perl_grep/perl_grep         "$2" "$3"
+    run 'ruby_grep'     ruby_grep/ruby_grep         "$2" "$3"
+    run 'gawk'          gawk                        "/$2/" "$3"
+    run 'mawk'          mawk                        "/$2/" "$3"
+    run 'nbawk'         mawk                        "/$2/" "$3"
+
+    echo ''
+)
+
+patterns(){
+    cat <<'EOF'
+apple* ^apple
+application ^application$
+a???z ^a...z$
+*ppler ppler$
+*a*b*c*d* a.*b.*c.*d
+EOF
+}
+
+patterns(){
+    cat <<'EOF'
+*a*b*c*d* a.*b.*c.*d
+EOF
+}
+
+patterns | while read glob regexp; do
+    for i in $BENCH_STEPS; do
+	match "$glob" "$regexp" "input$i"
+    done
+done
+
+rm -rf "$tmpdir"

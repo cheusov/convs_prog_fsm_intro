@@ -1,0 +1,60 @@
+CONTENT:
+
+    * Introduction To Finite State Machines presentation
+    * Working high-performance source code for matching glob-like patterns
+    * Benchmark utility and results
+
+PREREQUISITES:
+
+    C and C++ compilers
+    mk-configure
+
+    onig_grep: oniguruma development files
+    pcre2_grep: pcre2 development files
+    perl_grep: perl5
+    pire_grep: PIRE development files (https://github.com/yandex/pire)
+    re2_grep: re2 development files (https://github.com/google/re2)
+    ruby_grep: Ruby
+    rxspencer_grep: rxspencer development files
+    tre_grep: TRE development files
+    uxre_grep: uxre development files (https://heirloom.sourceforge.net/)
+
+
+BUILD:
+
+    $ mkcmake help
+    $ less Makefile.common
+    $ brain
+    $ ...
+    $ mkcmake
+    $ xpdf presentation/fsm_intro.pdf
+
+  For example,
+
+    # pkg_add libtre libuxre mk-configure
+
+    $ export CPPFLAGS=-I/usr/pkg/include
+    $ export LDFLAGS='-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib'
+    $ export PIRE_CPPFLAGS=-I$HOME/local/pire/include
+    $ export PIRE_LDFLAGS="-L$HOME/local/pire/lib -Wl,-rpath,$HOME/local/pire/lib"
+    $ export PREFIX=$HOME/bin
+    
+    $ mkcmake tre_grep uxre_grep pire_grep my_grep
+    $ mkcmake install-tre_grep install-uxre_grep install-pire_grep install_my_grep
+
+PLAY:
+
+    $ my_grep -h
+    $ my_grep 'apple*' /usr/share/dict/words
+    $ my_grep '*a*b*c*d*' /usr/share/dict/words
+    $ tre_grep ^apple /usr/share/dict/words
+    $ uxre_grep 'a.*b.*c.*d' /usr/share/dict/words
+
+    $ mkcmake libc_grep
+    $ libc_grep/libc_grep ^apple /usr/share/dict/words
+
+THINK:
+
+    $ mkcmake all-presentation
+    $ xpdf presentation/fsm_intro.pdf
+    $ ./my_grep/bench
