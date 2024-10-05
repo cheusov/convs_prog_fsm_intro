@@ -17,6 +17,7 @@ test -r "$TEST_FILE"
 
 tmpdir=`mktemp -d bench.XXXXXX`
 
+# prepare input files for benchmarks
 if ! test -f "input$BENCH_STEP_COUNT"; then
     for i in `seq $DICTS_COUNT`; do
 	cat "$TEST_FILE"
@@ -33,6 +34,7 @@ if ! test -f "input$BENCH_STEP_COUNT"; then
     done
 fi
 
+# 
 run(){
     # $1 -- name
     # $2 -- executable
@@ -70,7 +72,7 @@ run(){
     esac
 }
 
-match()(
+run_match()(
     # $1 -- glob pattern
     # $2 -- regexp pattern
     # $3 -- filename
@@ -114,26 +116,117 @@ match()(
     echo ''
 )
 
-patterns(){
+run_search()(
+    # $1 -- glob pattern
+    # $2 -- regexp pattern
+    # $3 -- filename
+
+    echo "$3: $1 vs. $2"
+    export FILE_SIZE=$(wc -c "$3" | awk '{print $1}')
+    export LINE_COUNT=$(wc -l "$3" | awk '{print $1}')
+    limit=$(expr $FILE_SIZE '*' $TIMELIMIT / 1000000000)
+    ulimit -t "$limit"
+    awk -v tl="$TIMELIMIT" 'BEGIN { printf "Time limit: %s ns per symbol\n", tl }'
+    awk -v fs="$FILE_SIZE" -v lc="$LINE_COUNT" '
+	BEGIN { printf "Avg. line size: %s symbols\n", (fs - lc) / lc }'
+
+    # read the test file, so it will be kept in fs cache
+    awk '{ cnt += 1 } END {print cnt}' > /dev/null
+
+#    run 'my_grep' my_grep/my_grep "$1" "$3"
+
+    run 'libc_grep'         'libc_grep/libc_grep -o'            "$2" "$3"
+    run 'tre_grep'          'tre_grep/tre_grep -o'              "$2" "$3"
+    #run 'rx_grep'          'rx_grep/rx_grep -o'                "$2" "$3"
+    run 'pcre2_grep'        'pcre2_grep/pcre2_grep -o'          "$2" "$3"
+    run 'onig_grep'         'onig_grep/onig_grep -o'            "$2" "$3"
+    run 'uxre_grep'         'uxre_grep/uxre_grep -o'            "$2" "$3"
+    run 'rxspencer_grep'    'rxspencer_grep/rxspencer_grep -o'  "$2" "$3"
+
+#    run 'cppstl_grep'   cppstl_grep/cppstl_grep     "$2" "$3"
+#    run 're2_grep'      re2_grep/re2_grep           "$2" "$3"
+#    run 'pire_grep'     pire_grep/pire_grep         "$2" "$3"
+
+    run 'grep'          'grep -Eo'                  "$2" "$3"
+    run 'ggrep'         'ggrep -Eo'                 "$2" "$3"
+    run 'heirloom_egrep' 'heirloom_egrep -o'        "$2" "$3"
+#    run 'perl_grep'     perl_grep/perl_grep         "$2" "$3"
+#    run 'ruby_grep'     ruby_grep/ruby_grep         "$2" "$3"
+#    run 'python_grep'   python_grep/python_grep     "$2" "$3"
+#    run 'gawk'          gawk                        "/$2/" "$3"
+#    run 'mawk'          mawk                        "/$2/" "$3"
+#    run 'nbawk'         mawk                        "/$2/" "$3"
+
+    echo ''
+)
+
+#match_patterns(){
+#    cat <<'EOF'
+#apple* ^apple
+#application ^application$
+#a???z ^a...z$
+#*ppler ppler$
+#*a*b*c*d* a.*b.*c.*d
+#EOF
+#}
+
+match_patterns(){
     cat <<'EOF'
-apple* ^apple
-application ^application$
-a???z ^a...z$
-*ppler ppler$
 *a*b*c*d* a.*b.*c.*d
 EOF
 }
 
-patterns(){
-    cat <<'EOF'
-*a*b*c*d* a.*b.*c.*d
-EOF
-}
-
-patterns | while read glob regexp; do
-    for i in $BENCH_STEPS; do
-	match "$glob" "$regexp" "input$i"
+match(){
+    match_patterns | while read glob regexp; do
+	for i in $BENCH_STEPS; do
+	    run_match "$glob" "$regexp" "input$i"
+	done
     done
+}
+
+search_patterns(){
+    cat <<'EOF'
+a*b*c*d a.*b.*c.*d
+EOF
+}
+
+search(){
+    search_patterns | while read glob regexp; do
+	for i in $BENCH_STEPS; do
+	    run_search "$glob" "$regexp" "input$i"
+	done
+    done
+}
+
+usage (){
+    cat 1>&2 <<EOF
+pkg_cleanup_packages - analyses FILE_NAME field of src_summary
+given on input and optionally removes files and directories in PACKAGES
+not referenced by any package.
+
+usage: pkg_cleanup_packages [OPTIONS] [files...]
+OPTIONS:
+  -h            display this help message
+  -o            run SEARCH benchmark, the default is MATCH
+EOF
+}
+
+match=1
+search=0
+while getopts ho f; do
+    case "$f" in
+	h)   usage; exit 0;;
+	o)   match=0; search=1;;
+	?)   printf "Run bench -h for details\n"; exit 2;;
+    esac
 done
+shift `expr $OPTIND - 1`
+
+if test 1 = "$match"; then
+    match
+fi
+if test 1 = "$search"; then
+    search
+fi
 
 rm -rf "$tmpdir"
