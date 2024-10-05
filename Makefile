@@ -9,6 +9,7 @@ LIBDEPS +=	libcommon:rxspencer_grep
 LIBDEPS +=	libcommon:cppstl_grep
 LIBDEPS +=	libcommon:re2_grep
 LIBDEPS +=	libcommon:pire_grep
+SUBPRJ  +=	perl_grep ruby_grep python_grep
 SUBPRJ  +=	presentation
 
 INTERNALLIBS =	libcommon
