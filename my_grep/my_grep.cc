@@ -541,17 +541,23 @@ private:
 	void process_completely_finite_states()
 	{
 		for (unsigned state = 0; state < m_state_count; ++state) {
-			//debug << "curr_state: " << state << '\n';
 			bool loop = true;
 			for (unsigned iw = 0; iw < m_iw_count; ++iw) {
 				if (m_arcs[state * m_iw_count + iw] != state) {
-					//debug << "  no\n";
 					loop = false;
 					break;
 				}
 			}
 			if (loop) {
 				for (unsigned iw = 0; iw < m_iw_count; ++iw) {
+					m_arcs[state * m_iw_count + iw] = -2;
+				}
+			}
+		}
+		for (unsigned state = 0; state < m_state_count; ++state) {
+			for (unsigned iw = 0; iw < m_iw_count; ++iw) {
+				int to_state = m_arcs[state * m_iw_count + iw];
+				if (to_state >= 0 && m_arcs[to_state * m_iw_count] == -2) {
 					m_arcs[state * m_iw_count + iw] = -2;
 				}
 			}
