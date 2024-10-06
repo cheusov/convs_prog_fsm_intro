@@ -112,7 +112,7 @@ run_match()(
     run 'awk'           awk                         "/$2/" "$3"
     run 'gawk'          gawk                        "/$2/" "$3"
     run 'mawk'          mawk                        "/$2/" "$3"
-    run 'nbawk'         mawk                        "/$2/" "$3"
+    run 'nbawk'         nbawk                       "/$2/" "$3"
     run 'heirloom_awk'  heirloom_awk                "/$2/" "$3"
 
     echo ''
