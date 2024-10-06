@@ -5,7 +5,7 @@
 : ${BENCH_STEP_COUNT:=14}
 : ${BENCH_STEPS:=0 $(seq $BENCH_STEP_COUNT)}
 : ${DICTS_COUNT:=1000} # how many times add /usr/share/dict/words to the test file
-: ${BENCH_TOOLS:=my_grep libc_grep heirloom_egrep tre_grep pcre2_grep onig_grep uxre_grep rxspencer_grep cppstl_grep re2_grep pire_grep grep ggrep perl_grep ruby_grep python_grep awk gawk mawk nbawk}
+: ${BENCH_TOOLS:=my_grep libc_grep heirloom_egrep tre_grep pcre2_grep onig_grep uxre_grep rxspencer_grep cppstl_grep re2_grep pire_grep grep ggrep perl_grep ruby_grep python_grep awk gawk mawk nbawk heirloom_awk}
 : ${TEST_FILE:=/usr/share/dict/words}
 
 #
@@ -113,6 +113,7 @@ run_match()(
     run 'gawk'          gawk                        "/$2/" "$3"
     run 'mawk'          mawk                        "/$2/" "$3"
     run 'nbawk'         mawk                        "/$2/" "$3"
+    run 'heirloom_awk'  heirloom_awk                "/$2/" "$3"
 
     echo ''
 )
@@ -154,9 +155,12 @@ run_search()(
 #    run 'perl_grep'     perl_grep/perl_grep         "$2" "$3"
 #    run 'ruby_grep'     ruby_grep/ruby_grep         "$2" "$3"
 #    run 'python_grep'   python_grep/python_grep     "$2" "$3"
-#    run 'gawk'          gawk                        "/$2/" "$3"
-#    run 'mawk'          mawk                        "/$2/" "$3"
-#    run 'nbawk'         mawk                        "/$2/" "$3"
+    awk_code='match($0, '"/$2/"') {print substr($0, RSTART, RLENGTH)}'
+    run 'awk'           awk                         "$awk_code" "$3"
+    run 'gawk'          gawk                        "$awk_code" "$3"
+    run 'mawk'          mawk                        "$awk_code" "$3"
+    run 'nbawk'         nbawk                       "$awk_code" "$3"
+    run 'heirloom_awk'  heirloom_awk                "$awk_code" "$3"
 
     echo ''
 )
