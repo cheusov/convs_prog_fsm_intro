@@ -46,6 +46,7 @@
 #include <mkc_err.h>
 
 #include "file_match.h"
+#include "map_uint_to_uint.h"
 
 static std::ostream &debug = std::cerr;
 
@@ -522,6 +523,7 @@ static void print_fsa(fsa &_fsa)
 			debug << ' ' << from << ' ' << iw << '/' << iwc << ' ' << to << '\n';
 		}
 	}
+	debug << '\n';
 }
 
 // Deterministic Finite State Automaton used during match
@@ -631,7 +633,7 @@ public:
 			m_initial_state = 0;
 
 		// from_state * iws -> to_state matrix.
-		// to state == -1 means "no arc"
+		// to_state == -1 means "no arc"
 		m_arcs = new unsigned[m_state_count * m_iw_count];
 		memset(m_arcs, -1, m_state_count * m_iw_count * sizeof(m_arcs[0]));
 
@@ -739,6 +741,7 @@ class dfa_matcher_i {
 public:
 	virtual void set_nfa(const fsa& nfa) = 0;
 	virtual int match(const char *buffer, size_t buffer_size) = 0;
+	virtual std::pair<int, int> search(const char *buffer, size_t buffer_size) = 0;
 };
 
 // Class for DFA-based matcher with weight mapping
@@ -782,6 +785,8 @@ protected:
 	}
 };
 
+static bool option_D = false;
+
 // Class used for matching using DFA with iwmap
 template <typename DFAType>
 class dfa_matcher_iwmap : public dfa_matcher_iwmap_base {
@@ -789,6 +794,8 @@ private:
 	// glob pattern
 	DFAType m_fast_dfa;
 
+	// search mode
+	map_uint_to_uint m_state2start;
 public:
 	dfa_matcher_iwmap() = default;
 
@@ -804,10 +811,12 @@ public:
 		fsa dfa;
 		nfa2mindfa(dfa, nfa_iwmap);
 
-//		print_fsa(dfa);
+		if (option_D)
+			print_fsa(dfa);
 
 		//
 		m_fast_dfa.set(dfa);
+		m_state2start.set_key_limit(dfa.get_state_count());
 	}
 
 	virtual int match(const char *buffer, size_t buffer_size)
@@ -825,6 +834,140 @@ public:
 
 		return m_fast_dfa.is_finite_state(state);
 	}
+
+private:
+	int search(int state, const char *buffer, size_t buffer_size) {
+		unsigned iw = 0;
+		int best = 0;
+
+		for (size_t pos = 0; pos < buffer_size; ) {
+			iw = (unsigned) (unsigned char) buffer[pos];
+			++pos;
+			iw = m_iw_map[iw];
+			state = m_fast_dfa.get_arc(state, iw);
+			switch (state) {
+				case -2:
+					return buffer_size;
+				case -1:
+					return best;
+				default:
+					if (m_fast_dfa.is_finite_state(state))
+						best = pos;
+			}
+		}
+
+		return best;
+	}
+
+public:
+	virtual std::pair<int, int> search(const char *buffer, size_t buffer_size)
+	{
+		unsigned best_start = -1;
+		int best_length = 0;
+
+		m_state2start.clear();
+
+		unsigned iw = 0;
+		const int init_state = m_fast_dfa.get_initial_state();
+
+		for (size_t pos = 0; pos < buffer_size; ++pos) {
+			iw = (unsigned) (unsigned char) buffer[pos];
+			iw = m_iw_map[iw];
+
+			//
+			map_uint_to_uint::iterator curr_it = m_state2start.begin();
+			unsigned current_best_start = -1;
+			int current_best_length = 0;
+			for (; ! curr_it.is_end(); ++curr_it) {
+				unsigned old_state = curr_it.key();
+				const unsigned start = *curr_it;
+				int state = m_fast_dfa.get_arc(old_state, iw);
+				switch (state) {
+					case -1:
+						curr_it.erase();
+						break;
+					case -2:
+						curr_it.erase();
+						if (start <= current_best_start) {
+							current_best_start = start;
+							current_best_length = buffer_size - start;
+						}
+						break;
+					default:
+						bool different = (old_state != state);
+						if (different) {
+							curr_it.erase();
+						} else {
+							assert(m_state2start[state] == start);
+						}
+						if (m_fast_dfa.is_finite_state(state) && start < current_best_start) {
+							current_best_start = start;
+							current_best_length = pos + 1 - start;
+							if (m_state2start.empty()) {
+								int end = search(state, buffer + pos + 1, buffer_size - pos - 1);
+								current_best_length += end;
+								return std::pair<int, int>(current_best_start, current_best_length);
+							}
+						}
+
+						if (different) {
+							if (! m_state2start.contains(state)) {
+								m_state2start[state] = start;
+							} else {
+								unsigned &set_start = m_state2start[state];
+								if (start < set_start)
+									set_start = start;
+							}
+						}
+				}
+
+				if (curr_it.is_end())
+					break;
+			}
+			if (current_best_start < best_start) {
+				best_start = current_best_start;
+				best_length = current_best_length;
+			} else if (current_best_start == best_start) {
+				best_length = current_best_length;
+			}
+
+			if ((int)best_start < 0) {
+				// let's start from pos
+				int state = m_fast_dfa.get_arc(init_state, iw);
+				switch (state) {
+					case -1:
+						break;
+					case -2:
+						best_start = pos;
+						best_length = buffer_size - pos;
+						if (m_state2start.empty()){
+							// Optimization. No need to process the rest of string, because
+							// all other pretender will be righter than this one.
+							goto exit;
+						}
+
+						break;
+					default:
+						if (! m_state2start.contains(state)) {
+							m_state2start[state] = pos;
+						}
+
+						if (m_fast_dfa.is_finite_state(state)) {
+							best_start = pos;
+							best_length = 1;
+							if (m_state2start.empty()) {
+								int end = search(state, buffer + pos + 1, buffer_size - pos - 1);
+								best_length += end;
+								return std::pair<int, int>(best_start, best_length);
+							}
+						}
+				}
+			}
+		}
+
+	exit:
+		return std::pair<int, int>(best_start, best_length);
+	}
 };
 
 static dfa_matcher_i *matcher;
@@ -837,6 +980,18 @@ static void match(const char *line, size_t line_len)
 	}
 }
 
+static bool option_O = false;
+static void search(const char *line, size_t line_len)
+{
+	std::pair<int, int> result = matcher->search(line, line_len);
+	if (result.first >= 0){
+		if (option_O)
+			printf("%d %d ", result.first, result.second);
+		fwrite(line + result.first, 1, result.second, stdout);
+		fputc('\n', stdout);
+	}
+}
+
 static void usage()
 {
 	fprintf(stderr, "usage: my_grep [OPTIONS] GLOB_PATTERNs FILE\n\
@@ -845,9 +1000,13 @@ and FILE is a filename to scan.\n\
 \n\
 OPTIONS:\n\
    -h     --    display this screen\n\
+   -o     --    show only the part of a matching line that matches GLOB_PATTERNs\n\
+   -O     --    imply -o and output index and length of found string\n\
    -Wu    --    union of several glob patterns\n\
-   -Wi    --    intersection of several glob patterns\n\
-   -Ws    --    subtraction of several glob patterns\n\
+   -Wi    --    intersect several glob patterns\n\
+   -Ws    --    subtract several glob patterns\n\
+\n\
+   -D     --    enable debugging output\n\
 \n\
 If FILE is '-', than stdin is read\n\
 \n\
@@ -865,12 +1024,22 @@ int main(int argc, char **argv)
 	int opt;
 
 	fsa_operation op = UNION;
+	bool option_o = false;
 
-	while ((opt = getopt(argc, argv, "+hW:")) != -1) {
+	while ((opt = getopt(argc, argv, "+DhoOW:")) != -1) {
 		switch (opt) {
+			case 'D':
+				option_D = true;
+				break;
 			case 'h':
 				usage();
 				exit(0);
+			case 'o':
+				option_o = true;
+				break;
+			case 'O':
+				option_O = option_o = true;
+				break;
 			case 'W':
 				switch (optarg[0]) {
 					case 'u':
@@ -929,7 +1098,10 @@ int main(int argc, char **argv)
 	matcher_iwmap.set_nfa(nfa);
 	matcher = &matcher_iwmap;
 
-	file_match2(match, argv[argc - 1]);
+	if (option_o)
+		file_match2(search, argv[argc - 1]);
+	else
+		file_match2(match, argv[argc - 1]);
 
 	return 0;
 }

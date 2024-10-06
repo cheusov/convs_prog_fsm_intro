@@ -27,6 +27,7 @@ BUILD:
     $ brain
     $ ...
     $ mkcmake
+    $ mkcmake test
     $ xpdf presentation/fsm_intro.pdf
 
   For example,
@@ -40,6 +41,7 @@ BUILD:
     $ export PREFIX=$HOME/bin
     
     $ mkcmake tre_grep uxre_grep pire_grep my_grep
+    $ mkcmake test
     $ mkcmake install-tre_grep install-uxre_grep install-pire_grep install-my_grep
 
 PLAY:

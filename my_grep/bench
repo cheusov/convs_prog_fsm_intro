@@ -134,7 +134,7 @@ run_search()(
     # read the test file, so it will be kept in fs cache
     awk '{ cnt += 1 } END {print cnt}' > /dev/null
 
-#    run 'my_grep' my_grep/my_grep "$1" "$3"
+    run 'my_grep' 'my_grep/my_grep -o' "$1" "$3"
 
     run 'libc_grep'         'libc_grep/libc_grep -o'            "$2" "$3"
     run 'tre_grep'          'tre_grep/tre_grep -o'              "$2" "$3"

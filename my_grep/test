@@ -12,7 +12,7 @@ cmp () {
     glob="'"`echo "$1" | sed "s/ /' '/g"`"'"
     #echo glob="$glob"
     printf "$2" > "$tmp_input"
-    eval my_grep/my_grep $glob "$tmp_input" > "$tmp_result"
+    eval my_grep $glob "$tmp_input" > "$tmp_result"
     result=`cat $tmp_result`
     printf '=======================\n'
     expected=`printf "$3"`
@@ -51,6 +51,7 @@ cmp '*ab*' 'abc\nab'     'abc\nab'
 
 #
 cmp '*'   'a\nab\nabc'        'a\nab\nabc'
+cmp '**'  'a\nab\nabc'        'a\nab\nabc'
 cmp '??'   'a\nab\nabc'        ab
 cmp 'a??a' 'a\nab\nabc\nabca'  abca
 
@@ -86,6 +87,33 @@ cmp '-Ws *ab* *ba*'   'aba'             ''
 cmp '-Ws *ab* *ba*'   'absorbability'   ''
 cmp '-Ws *ab* *ba*'   'xyzab123'        'xyzab123'
 cmp '-Ws *ab* *ba*'   'xyzba123'        ''
+
+#
+cmp '-O *'   'a\nab\nabc'        '0 1 a\n0 2 ab\n0 3 abc'
+cmp '-O ??'  'a\nab\nabc'        '0 2 ab\n0 2 ab'
+cmp '-O a'   'aaaaaaaaaa'        '0 1 a'
+cmp '-O ab'  'abababababababa'   '0 2 ab'
+cmp '-O ab'  'zabzabzabqabrabyabiaboa'   '1 2 ab'
+cmp '-O abc'  'zzzabctrewqabcyuioopabcytr456'   '3 3 abc'
+cmp '-O openvpn' 'I use openvpn and may be you too use openvpn.' '6 7 openvpn'
+cmp '-O open*vpn' 'I use openvpn and may be you too use openvpn.' '6 38 openvpn and may be you too use openvpn'
+
+cmp '-O **'   'a\nab\nabc'        '0 1 a\n0 2 ab\n0 3 abc'
+cmp '-O *??'  'a\nab\nabc'        '0 2 ab\n0 3 abc'
+cmp '-O *a'   'aaaaaaaaaa'        '0 10 aaaaaaaaaa'
+cmp '-O *ab'  'abababababababa'   '0 14 ababababababab'
+cmp '-O *ab'  'zabzabzabqabrabyabiaboa'   '0 21 zabzabzabqabrabyabiab'
+cmp '-O *abc'  'zzzabctrewqabcyuioopabcytr456'   '0 23 zzzabctrewqabcyuioopabc'
+cmp '-O *openvpn' 'I use openvpn and may be you too use openvpn.' '0 44 I use openvpn and may be you too use openvpn'
+cmp '-O *open*vpn' 'I use openvpn and may be you too use openvpn.' '0 44 I use openvpn and may be you too use openvpn'
+
+cmp '-O ??*'  'a\nab\nabc'        '0 2 ab\n0 3 abc'
+cmp '-O a*'   'aaaaaaaaaa'        '0 10 aaaaaaaaaa'
+cmp '-O ab*'  'abababababababa'   '0 15 abababababababa'
+cmp '-O ab*'  'zabzabzabqabrabyabiaboa'   '1 22 abzabzabqabrabyabiaboa'
+cmp '-O abc*'  'zzzabctrewqabcyuioopabcytr456'   '3 26 abctrewqabcyuioopabcytr456'
+cmp '-O openvpn*' 'I use openvpn and may be you too use openvpn.' '6 39 openvpn and may be you too use openvpn.'
+cmp '-O open*vpn*' 'I use openvpn and may be you too use openvpn.' '6 39 openvpn and may be you too use openvpn.'
 
 #
 fstab='LABEL=altlinux-root / ext4 relatime 1 1
