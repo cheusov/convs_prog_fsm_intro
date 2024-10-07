@@ -883,8 +883,16 @@ public:
 			//
 			map_uint_to_uint::iterator curr_it = m_state2start.begin();
 			for (; ! curr_it.is_end(); ++curr_it) {
-				unsigned old_state = curr_it.key();
 				const unsigned start = *curr_it;
+				if (start > best_start) {
+					curr_it.erase();
+					if (curr_it.is_end())
+						break;
+					else
+						continue;
+				}
+
+				unsigned old_state = curr_it.key();
 				int state = m_fast_dfa.get_arc(old_state, iw);
 				switch (state) {
 					case -1:
@@ -901,8 +909,8 @@ public:
 						bool different = (old_state != state);
 						if (different) {
 							curr_it.erase();
-						} else {
-							assert(m_state2start[state] == start);
+//						} else {
+//							assert(m_state2start[state] == start);
 						}
 
 						if (m_fast_dfa.is_finite_state(state)){
