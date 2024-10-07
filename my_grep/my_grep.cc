@@ -882,8 +882,6 @@ public:
 
 			//
 			map_uint_to_uint::iterator curr_it = m_state2start.begin();
-			unsigned current_best_start = -1;
-			int current_best_length = 0;
 			for (; ! curr_it.is_end(); ++curr_it) {
 				unsigned old_state = curr_it.key();
 				const unsigned start = *curr_it;
@@ -894,9 +892,9 @@ public:
 						break;
 					case -2:
 						curr_it.erase();
-						if (start <= current_best_start) {
-							current_best_start = start;
-							current_best_length = buffer_size - start;
+						if (start <= best_start) {
+							best_start = start;
+							best_length = buffer_size - start;
 						}
 						break;
 					default:
@@ -906,13 +904,20 @@ public:
 						} else {
 							assert(m_state2start[state] == start);
 						}
-						if (m_fast_dfa.is_finite_state(state) && start < current_best_start) {
-							current_best_start = start;
-							current_best_length = pos + 1 - start;
-							if (m_state2start.empty()) {
-								int end = search(state, buffer + pos + 1, buffer_size - pos - 1);
-								current_best_length += end;
-								return std::pair<int, int>(current_best_start, current_best_length);
+
+						if (m_fast_dfa.is_finite_state(state)){
+							if (start > best_start) {
+							} else {
+								unsigned new_length = pos + 1 - start;
+								if (start < best_start || new_length > best_length) {
+									best_start = start;
+									best_length = new_length;
+									if (m_state2start.empty()) {
+										int end = search(state, buffer + pos + 1, buffer_size - pos - 1);
+										best_length += end;
+										return std::pair<int, int>(best_start, best_length);
+									}
+								}
 							}
 						}
 
@@ -930,12 +935,6 @@ public:
 				if (curr_it.is_end())
 					break;
 			}
-			if (current_best_start < best_start) {
-				best_start = current_best_start;
-				best_length = current_best_length;
-			} else if (current_best_start == best_start) {
-				best_length = current_best_length;
-			}
 
 			if ((int)best_start < 0) {
 				// let's start from pos
@@ -946,26 +945,28 @@ public:
 					case -2:
 						best_start = pos;
 						best_length = buffer_size - pos;
+
 						if (m_state2start.empty()){
 							// Optimization. No need to process the rest of string, because
-							// all other pretender will be righter than this one.
-							goto exit;
+							// all other pretenders will be righter than this one.
+							return std::pair<int, int>(best_start, best_length);
 						}
 
 						break;
 					default:
-						if (! m_state2start.contains(state)) {
-							m_state2start[state] = pos;
-						}
-
 						if (m_fast_dfa.is_finite_state(state)) {
 							best_start = pos;
 							best_length = 1;
 							if (m_state2start.empty()) {
-								int end = search(state, buffer + pos + 1, buffer_size - pos - 1);
+								unsigned next_pos = pos + 1;
+								int end = search(state, buffer + next_pos, buffer_size - next_pos);
 								best_length += end;
 								return std::pair<int, int>(best_start, best_length);
 							}
+						}
+
+						if (! m_state2start.contains(state)) {
+							m_state2start[state] = pos;
 						}
 				}
 			}
