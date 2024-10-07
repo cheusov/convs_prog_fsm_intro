@@ -151,7 +151,7 @@ run_search()(
 
     run 'grep'          'grep -Eo'                  "$2" "$3"
     run 'ggrep'         'ggrep -Eo'                 "$2" "$3"
-    run 'heirloom_egrep' 'heirloom_egrep -o'        "$2" "$3"
+#    run 'heirloom_egrep' 'heirloom_egrep -o'        "$2" "$3"
 #    run 'perl_grep'     perl_grep/perl_grep         "$2" "$3"
 #    run 'ruby_grep'     ruby_grep/ruby_grep         "$2" "$3"
 #    run 'python_grep'   python_grep/python_grep     "$2" "$3"
