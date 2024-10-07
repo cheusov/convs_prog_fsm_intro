@@ -57,6 +57,8 @@ static void compare(
 //	print_map(map1);
 //	print_map(map2);
 
+	assert(map1.size() == map2.size());
+
 	for (const auto &p: map2) {
 		assert(map1.contains(p.first));
 		assert(map1[p.first] == map2.at(p.first));

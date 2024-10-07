@@ -42,6 +42,7 @@ private:
 	unsigned m_iteration_counter = 1;
 	unsigned m_first_key = unsigned(-1);
 	unsigned m_key_limit = 0;
+	unsigned m_size = 0;
 public:
 	map_uint_to_uint() = default;
 
@@ -53,10 +54,16 @@ public:
 			// cleaning m_iteration_counter members
 			std::memset(m_data, 0, data_size);
 		}
+
+		clear();
 	}
 
 	~map_uint_to_uint() {
 		free(m_data);
+	}
+
+	inline unsigned size() const {
+		return m_size;
 	}
 
 	inline unsigned get_first_key() const {
@@ -87,6 +94,7 @@ public:
 			triple.m_iteration_counter = m_iteration_counter;
 			triple.m_next = m_first_key;
 			m_first_key = key;
+			++m_size;
 		}
 		return triple.m_value;
 	}
@@ -99,11 +107,13 @@ public:
 			triple.m_iteration_counter = m_iteration_counter;
 			triple.m_next = m_first_key;
 			m_first_key = key;
+			++m_size;
 		}
 	}
 
 	// amortized: O(1), worst: O(k) where k is the key_limit
 	inline void clear() {
+		m_size = 0;
 		m_first_key = -1;
 		++m_iteration_counter;
 		if (m_iteration_counter == 0) {
@@ -153,6 +163,7 @@ public:
 			triple& triple = m_obj->m_data[key];
 			--triple.m_iteration_counter;
 			*m_key = m_obj->m_data[key].m_next;
+			--m_obj->m_size;
 		}
 	};
 
