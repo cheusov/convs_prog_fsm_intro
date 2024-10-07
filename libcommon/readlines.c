@@ -25,9 +25,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "file_match.h"
+#include "readlines.h"
 
-void file_match(void (*match)(const char *), const char *filename)
+void readlines(void (*process_line)(const char *), const char *filename)
 {
 	int reti;
 	char *line = NULL;
@@ -56,7 +56,7 @@ void file_match(void (*match)(const char *), const char *filename)
 		}
 
 		// Process line
-		match(line);
+		process_line(line);
 	}
 
 	// Close the file
@@ -64,7 +64,7 @@ void file_match(void (*match)(const char *), const char *filename)
 		fclose(file);
 }
 
-void file_match2(void (*match)(const char *, size_t), const char *filename)
+void readlines2(void (*process_line)(const char *, size_t), const char *filename)
 {
 	int reti;
 	char *line = NULL;
@@ -93,7 +93,7 @@ void file_match2(void (*match)(const char *, size_t), const char *filename)
 		}
 
 		// Process line
-		match(line, line_len);
+		process_line(line, line_len);
 	}
 
 	// Close the file

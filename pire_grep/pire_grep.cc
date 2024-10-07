@@ -28,7 +28,7 @@
 
 #include <pire/pire.h>
 
-#include "file_match.h"
+#include "readlines.h"
 
 static Pire::NonrelocScanner regex;
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 		.Surround()
 		.Compile<Pire::NonrelocScanner>();
 
-	file_match(match, filename);
+	readlines(match, filename);
 
 	return 0;
 }

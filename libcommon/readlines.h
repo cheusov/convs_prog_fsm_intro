@@ -28,8 +28,8 @@
 extern "C" {
 #endif
 
-void file_match(void (*match)(const char *), const char *filename);
-void file_match2(void (*match)(const char *, size_t), const char *filename);
+void readlines(void (*process)(const char *), const char *filename);
+void readlines2(void (*process)(const char *, size_t), const char *filename);
 
 #ifdef __cplusplus
 }

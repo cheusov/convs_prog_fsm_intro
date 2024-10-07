@@ -1,4 +1,4 @@
 LIB  =	common
-SRCS =	file_match.c
+SRCS =	readlines.c
 
 .include <mkc.mk>

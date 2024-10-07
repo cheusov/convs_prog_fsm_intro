@@ -28,7 +28,7 @@
 
 #include <re2/re2.h>
 
-#include "file_match.h"
+#include "readlines.h"
 
 static std::unique_ptr<re2::RE2> regex;
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	file_match(match, filename);
+	readlines(match, filename);
 
 	return 0;
 }

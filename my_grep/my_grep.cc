@@ -45,7 +45,7 @@
 
 #include <mkc_err.h>
 
-#include "file_match.h"
+#include "readlines.h"
 #include "map_uint_to_uint.h"
 
 static std::ostream &debug = std::cerr;
@@ -1105,9 +1105,9 @@ int main(int argc, char **argv)
 	matcher = &matcher_iwmap;
 
 	if (option_o)
-		file_match2(search, argv[argc - 1]);
+		readlines2(search, argv[argc - 1]);
 	else
-		file_match2(match, argv[argc - 1]);
+		readlines2(match, argv[argc - 1]);
 
 	return 0;
 }

@@ -26,7 +26,7 @@
 #include <regex.h>
 #include <getopt.h>
 
-#include "file_match.h"
+#include "readlines.h"
 
 #ifndef REG_ONESUB /* defined by UXRE */
 #define REG_ONESUB 0
@@ -115,9 +115,9 @@ int main(int argc, char *argv[])
 	}
 
 	if (subexpr)
-		file_match(reg_search, filename);
+		readlines(reg_search, filename);
 	else
-		file_match(reg_match, filename);
+		readlines(reg_match, filename);
 
 	// Free regex memory
 	regfree(&regex);

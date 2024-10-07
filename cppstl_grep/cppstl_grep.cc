@@ -27,7 +27,7 @@
 #include <cstring>
 #include <regex>
 
-#include "file_match.h"
+#include "readlines.h"
 
 std::regex regex;
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	// Compile the regular expression
 	regex = std::regex(pattern, std::regex::extended | std::regex::optimize | std::regex::nosubs);
 
-	file_match(match, filename);
+	readlines(match, filename);
 
 	return 0;
 }
