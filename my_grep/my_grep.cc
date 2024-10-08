@@ -914,14 +914,14 @@ public:
 						}
 
 						if (m_fast_dfa.is_finite_state(state)){
-							if (start > best_start) {
-							} else {
-								unsigned new_length = pos + 1 - start;
+							if (start <= best_start) {
+								unsigned next_pos = pos + 1;
+								unsigned new_length = next_pos - start;
 								if (start < best_start || new_length > best_length) {
 									best_start = start;
 									best_length = new_length;
 									if (m_state2start.empty()) {
-										int end = search(state, buffer + pos + 1, buffer_size - pos - 1);
+										int end = search(state, buffer + next_pos, buffer_size - next_pos);
 										best_length += end;
 										return std::pair<int, int>(best_start, best_length);
 									}
