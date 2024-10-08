@@ -21,48 +21,50 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
+#ifndef LIBPIRECC_REGEX_H
+#define LIBPIRECC_REGEX_H
 
-#include <pire/pire.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "readlines.h"
+#include <sys/types.h>
 
-static Pire::NonrelocScanner regex;
+// regcomp flags
+#define REG_PIRE    0x800
+#define REG_NOSUB   0x400
 
-static void match(const char *line)
+// errors
+#define REG_NOMATCH        21
+
+#define REG_COMP_FAILED    22
+#define REG_BAD_CFLAGS     23
+
+typedef struct
 {
-	if (Pire::Runner(regex)//.Run(line, strlen(line));
-			   .Begin()
-			   .Run(line, line + strlen(line))
-		.End())
-	{
-		puts(line);
-	}
-}
+	void * p;
+} regex_t;
 
-int main(int argc, char *argv[])
+typedef ssize_t regoff_t;
+
+typedef struct
 {
-	if (argc < 3) {
-		fprintf(stderr, "Usage: %s <pattern> <filename>\n", argv[0]);
-		return 1;
-	}
+	regoff_t	rm_so;
+	regoff_t	rm_eo;
+} regmatch_t;
 
-	const char *pattern = argv[1];
-	const char *filename = argv[2];
+int	pire_regcomp(regex_t *, const char *, int);
+int	pire_regexec(const regex_t *, const char *, size_t, regmatch_t *, int);
+size_t	pire_regerror(int, const regex_t *, char *, size_t);
+void	pire_regfree(regex_t *);
 
-	std::vector<Pire::wchar32> ucs4;
-	Pire::Encodings::Utf8().FromLocal(pattern, pattern + strlen(pattern), std::back_inserter(ucs4));
-	// Compile the regular expression
-	regex = Pire::Lexer(ucs4.begin(), ucs4.end())
-		.SetEncoding(Pire::Encodings::Latin1())
-		.Parse()
-		.Surround()
-		.Compile<Pire::NonrelocScanner>();
+#define regcomp(preg, regex, cflags) pire_regcomp(preg, regex, cflags)
+#define regexec(preg, string, nmatch, pmatch, eflags) pire_regexec(preg, string, nmatch, pmatch, eflags)
+#define regerror(errcode, preg, errbuf, errbuf_size) pire_regerror(errcode, preg, errbuf, errbuf_size)
+#define regfree(preg) pire_regfree(preg)
 
-	readlines(match, filename);
-
-	return 0;
+#ifdef __cplusplus
 }
+#endif
+
+#endif /* LIBPIRECC_REGEX_H */

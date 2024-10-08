@@ -83,6 +83,8 @@ int main(int argc, char *argv[])
 	regcomp_flags |= REG_EXTENDED;
 #elif defined(REG_RE2)
 	regcomp_flags |= REG_RE2;
+#elif defined(REG_PIRE)
+	regcomp_flags |= REG_PIRE;
 #else
 	#error "Not supported"
 #endif
