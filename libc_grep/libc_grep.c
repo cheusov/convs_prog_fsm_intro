@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	int ret;
 	int opt;
 	int regcomp_flags = REG_EXTENDED | REG_NOSUB;
-	int subexpr = 0;
+	int mode_search = 0;
 	const char *progname = argv[0];
 
 	while ((opt = getopt(argc, argv, "ho")) != -1) {
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 			case 'o':
 				regcomp_flags &= ~REG_NOSUB;
 				regcomp_flags |= REG_ONESUB;
-				subexpr = 1;
+				mode_search = 1;
 				break;
 			default:
 				usage(progname);
@@ -110,11 +110,13 @@ int main(int argc, char *argv[])
 	// Compile the regular expression
 	ret = regcomp(&regex, pattern, regcomp_flags);
 	if (ret) {
-		fprintf(stderr, "Could not compile regex\n");
+		char errmsg[1024] = "";
+		regerror(ret, &regex, errmsg, sizeof(errmsg));
+		fprintf(stderr, "%s\n", errmsg);
 		exit(1);
 	}
 
-	if (subexpr)
+	if (mode_search)
 		readlines(reg_search, filename);
 	else
 		readlines(reg_match, filename);
