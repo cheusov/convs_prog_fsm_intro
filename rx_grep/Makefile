@@ -4,6 +4,8 @@ SRCS =	libc_grep.c
 .PATH:		../libc_grep
 .NOPATH:	libc_grep.o
 
+CPPFLAGS +=	-I.
+
 CPPFLAGS +=	${RX_CPPFLAGS}
 LDADD    +=	${RX_LDADD}
 LDFLAGS  +=	${RX_LDFLAGS}

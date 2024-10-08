@@ -7,15 +7,15 @@ TRE_CPPFLAGS ?=	-I/usr/include/tre
 TRE_LDADD    ?=	-ltre
 TRE_LDFLAGS  ?=
 
-RX_CPPFLAGS  ?=	-I.
+RX_CPPFLAGS  ?=
 RX_LDADD     ?=	-lrx
 RX_LDFLAGS   ?=
 
-PCRE2_CPPFLAGS  ?=	-I.
+PCRE2_CPPFLAGS  ?=
 PCRE2_LDADD     ?=	-lpcre2-posix
 PCRE2_LDFLAGS   ?=
 
-ONIG_CPPFLAGS  ?=	-I.
+ONIG_CPPFLAGS  ?=
 ONIG_LDADD     ?=
 ONIG_LDFLAGS   ?=
 

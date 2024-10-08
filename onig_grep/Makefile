@@ -6,6 +6,8 @@ MKC_CHECK_PKGCONFIG +=	oniguruma
 .PATH:		../libc_grep
 .NOPATH:	libc_grep.o
 
+CPPFLAGS +=	-I.
+
 CPPFLAGS +=	${ONIG_CPPFLAGS}
 LDADD    +=	${ONIG_LDADD}
 LDFLAGS  +=	${ONIG_LDFLAGS}
