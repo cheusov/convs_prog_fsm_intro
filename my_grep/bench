@@ -146,7 +146,7 @@ run_search()(
     run 'rxspencer_grep'    'rxspencer_grep/rxspencer_grep -o'  "$2" "$3"
 
 #    run 'cppstl_grep'   cppstl_grep/cppstl_grep     "$2" "$3"
-#    run 're2_grep'      re2_grep/re2_grep           "$2" "$3"
+    run 're2_grep'      re2_grep/re2_grep           "$2" "$3"
 #    run 'pire_grep'     pire_grep/pire_grep         "$2" "$3"
 
     run 'grep'          'grep -Eo'                  "$2" "$3"

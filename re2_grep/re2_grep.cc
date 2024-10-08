@@ -28,33 +28,82 @@
 
 #include <re2/re2.h>
 
+#include <getopt.h>
+
 #include "readlines.h"
 
 static std::unique_ptr<re2::RE2> regex;
 
-static void match(const char *line)
+static void reg_match(const char *line, size_t line_size)
 {
-	if (re2::RE2::PartialMatch(line, *regex))
+	if (re2::RE2::PartialMatch(re2::StringPiece(line, line_size), *regex))
 		puts(line);
+}
+
+static void reg_search(const char *line, size_t line_size)
+{
+//	std::string substring;
+	re2::StringPiece found;
+	if (re2::RE2::PartialMatch(
+			re2::StringPiece(line, line_size), *regex, &found))
+	{
+		fwrite(found.data(), 1, found.size(), stdout);
+		putchar('\n');
+	}
+}
+
+static void usage(const char *progname)
+{
+	fprintf(stderr, "usage: %s [OPTIONS] REGEXP FILE\n\
+OPTIONS:\n\
+   -h            display this screen\n\
+   -o            show only the part of a matching line that matches REGEXP\n\
+\n", progname);
 }
 
 int main(int argc, char *argv[])
 {
-	if (argc < 3) {
-		fprintf(stderr, "Usage: %s <pattern> <filename>\n", argv[0]);
+	int opt;
+	int mode_search = 0;
+	const char *progname = argv[0];
+
+	while ((opt = getopt(argc, argv, "ho")) != -1) {
+		switch (opt) {
+			case 'h':
+				usage(progname);
+				exit(0);
+				break;
+			case 'o':
+				mode_search = 1;
+				break;
+			default:
+				usage(progname);
+				exit(EXIT_FAILURE);
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 2) {
+		fprintf(stderr, "Usage: %s <pattern> <filename>\n", progname);
 		return 1;
 	}
 
-	const char *pattern = argv[1];
-	const char *filename = argv[2];
+	const char *pattern = argv[0];
+	const char *filename = argv[1];
 
 	// Compile the regular expression
-	regex = std::unique_ptr<re2::RE2>(new re2::RE2(pattern));
+	regex = std::unique_ptr<re2::RE2>(new re2::RE2(pattern, re2::RE2::Quiet));
 	if (!regex->ok()) {
+		std::cerr << regex->error() << '\n';
 		return 1;
 	}
 
-	readlines(match, filename);
+	if (mode_search)
+		readlines2(reg_search, filename);
+	else
+		readlines2(reg_match, filename);
 
 	return 0;
 }
