@@ -75,9 +75,17 @@ int main(int argc, char *argv[])
 {
 	int ret;
 	int opt;
-	int regcomp_flags = REG_EXTENDED | REG_NOSUB;
+	int regcomp_flags = REG_NOSUB;
 	int mode_search = 0;
 	const char *progname = argv[0];
+
+#ifdef REG_EXTENDED
+	regcomp_flags |= REG_EXTENDED;
+#elif defined(REG_RE2)
+	regcomp_flags |= REG_RE2;
+#else
+	#error "Not supported"
+#endif
 
 	while ((opt = getopt(argc, argv, "ho")) != -1) {
 		switch (opt) {
